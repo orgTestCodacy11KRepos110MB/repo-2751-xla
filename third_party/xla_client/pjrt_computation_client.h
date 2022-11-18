@@ -117,6 +117,9 @@ class PjRtComputationClient : public ComputationClient {
 
  private:
   std::shared_ptr<PjRtClient> client_;
+  // global_ordinals tracks a map from PjRtDeviceId to the device's
+  // dense global ordinal.
+  std::unordered_map<int, int> global_ordinals_;
   std::unordered_map<std::string, xla::PjRtDevice* const> string_to_device_;
   std::shared_ptr<std::vector<std::string>> replication_devices_;
   // TODO(wcromar): remove this when C API supports
@@ -125,6 +128,10 @@ class PjRtComputationClient : public ComputationClient {
       xla::PjRtClient::HostBufferSemantics::kImmutableUntilTransferCompletes;
 
   xla::PjRtDevice* StringToPjRtDevice(const std::string& device);
+
+  std::string PjRtDeviceToString(PjRtDevice* const device) const;
+  std::vector<std::string> PjRtDevicesToString(
+      absl::Span<PjRtDevice* const> devices) const;
 
   struct PjRtData : public Data {
     PjRtData(std::string device, Shape device_shape)

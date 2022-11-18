@@ -23,17 +23,16 @@
 
 namespace xla {
 
-namespace {
-
-std::string PjRtDeviceToString(PjRtDevice* const device) {
+std::string PjRtComputationClient::PjRtDeviceToString(PjRtDevice* const device) const {
   std::string platform =
       absl::AsciiStrToUpper(device->client()->platform_name());
-  std::string str = absl::StrFormat("%s:%d", platform, device->id());
+  int ordinal = global_ordinals_.at(device->id());
+  std::string str = absl::StrFormat("%s:%d", platform, ordinal);
   return str;
 }
 
-std::vector<std::string> PjRtDevicesToString(
-    absl::Span<PjRtDevice* const> devices) {
+std::vector<std::string> PjRtComputationClient::PjRtDevicesToString(
+    absl::Span<PjRtDevice* const> devices) const {
   std::vector<std::string> strs;
   strs.reserve(devices.size());
 
@@ -43,8 +42,6 @@ std::vector<std::string> PjRtDevicesToString(
 
   return strs;
 }
-
-}  // namespace
 
 PjRtComputationClient::PjRtComputationClient() {
   std::string device_type = sys_util::GetEnvString(env::kEnvPjRtDevice, "");
@@ -81,7 +78,15 @@ PjRtComputationClient::PjRtComputationClient() {
 
   XLA_CHECK(client_.get() != nullptr);
 
-  for (auto* device : client_->devices()) {
+  // PjRtDevice IDs are not guaranteed to be dense, so we need to track
+  // a device's global ordinal separately from its device ID. Order the
+  // devices by increasing ID to assign global ordinals.
+  std::vector<PjRtDevice*> ordered_devices(client_->device_count());
+  std::partial_sort_copy(client_->devices().begin(), client_->devices().end(),
+    ordered_devices.begin(), ordered_devices.end(),
+    [](auto &a, auto &b) { return a->id() < b->id(); });
+  for (auto* device : ordered_devices) {
+    global_ordinals_[device->id()] = global_ordinals_.size();
     std::string device_str = PjRtDeviceToString(device);
     string_to_device_.emplace(device_str, device);
   }
@@ -215,7 +220,9 @@ std::vector<ComputationClient::ComputationPtr> PjRtComputationClient::Compile(
 
       // TODO(244391366) verify this is correct for the collectives ops
       xla::DeviceAssignment device_assignment(1, client_->device_count());
-      device_assignment.FillIota(0);
+      for (const auto &[device_id, global_ordinal] : global_ordinals_) {
+        device_assignment(0, global_ordinal) = device_id;
+      }
       compile_options.executable_build_options.set_device_assignment(
           device_assignment);
     } else {
@@ -228,7 +235,9 @@ std::vector<ComputationClient::ComputationPtr> PjRtComputationClient::Compile(
           instance.parameter_is_tupled_arguments;
 
       xla::DeviceAssignment device_assignment(client_->device_count(), 1);
-      device_assignment.FillIota(0);
+      for (const auto &[device_id, global_ordinal] : global_ordinals_) {
+        device_assignment(global_ordinal, 0) = device_id;
+      }
       compile_options.executable_build_options.set_device_assignment(
           device_assignment);
     }
