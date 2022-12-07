@@ -22,6 +22,8 @@ extern const char* const kEnvPjRtDevice;
 extern const char* const kEnvPjRtTpuMaxInflightComputations;
 extern const char* const kEnvPjrtAsyncCpuClient;
 extern const char* const kEnvPjrtAsyncGpuClient;
+extern const char* const kEnvPjrtDistServiceAddr;
+extern const char* const kEnvLocalRank;
 
 }  // namespace env
 }  // namespace xla

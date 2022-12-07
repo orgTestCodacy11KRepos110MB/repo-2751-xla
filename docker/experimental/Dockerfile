@@ -46,7 +46,7 @@ RUN pip install mkl mkl-include setuptools typing_extensions cmake requests
 RUN git clone --recursive --depth=1 https://github.com/pytorch/pytorch.git
 WORKDIR /pytorch
 COPY torch_patches/ torch_patches/
-RUN bash -c "torch_pin=$(cat torch_patches/.torch_pin &); git fetch origin ${torch_pin:-master}; git checkout origin/${torch_pin:-master}"
+RUN bash -c 'torch_pin=$(cat torch_patches/.torch_pin &); git fetch origin ${torch_pin:-master}; git checkout origin/${torch_pin:-master}'
 
 # Disable CUDA for PyTorch
 ENV USE_CUDA "0"
@@ -74,6 +74,7 @@ RUN for p in tf_patches/*.diff; do patch -d third_party/tensorflow -N -p1 < $p; 
 COPY build_torch_xla_libs.sh .
 
 ARG tpuvm
+ARG cuda
 ARG tf_cuda_compute_capabilities
 ARG bazel_jobs
 RUN TPUVM_MODE=${tpuvm} XLA_CUDA=${cuda} BAZEL_JOBS=${bazel_jobs} TF_CUDA_COMPUTE_CAPABILITIES=${tf_cuda_compute_capabilities} bash build_torch_xla_libs.sh -O -D_GLIBCXX_USE_CXX11_ABI=1

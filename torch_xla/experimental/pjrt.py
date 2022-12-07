@@ -17,7 +17,7 @@ import torch_xla.core.xla_env_vars as xenv
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.xla_backend
 import torch_xla.utils.utils as xu
-from torch_xla.experimental import tpu
+from torch_xla.experimental import tpu, gpu
 
 R = TypeVar('R')
 FN = TypeVar('FN')
@@ -268,6 +268,8 @@ def _initialize_multiprocess(local_rank: int, local_world_size: int):
 
   if device_type() == 'TPU':
     tpu.configure_topology(local_rank, local_world_size)
+  elif device_type() == 'GPU':
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(local_rank)
 
 
 @requires_pjrt
@@ -292,6 +294,9 @@ def _run_multiprocess(fn: Callable[..., R],
   """
   if device_type() == 'TPU':
     num_processes = tpu.num_local_processes()
+  elif device_type() == 'GPU':
+    num_processes = gpu.num_local_processes()
+    gpu.initialize_distributed_runtime(num_processes)
   else:
     num_processes = 1
 

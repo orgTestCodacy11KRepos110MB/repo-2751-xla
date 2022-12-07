@@ -12,6 +12,14 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
+#include "pybind11/attr.h"
+#include "pybind11/cast.h"
+#include "pybind11/detail/common.h"
+#include "pybind11/numpy.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/pytypes.h"
+#include "pybind11/stl_bind.h"
+#include "tensorflow/compiler/xla/pjrt/distributed/distributed.h"
 #include "tensorflow/compiler/xla/service/hlo_module.h"
 #include "tensorflow/compiler/xla/service/hlo_parser.h"
 #include "tensorflow/compiler/xla/xla_client/computation_client.h"
@@ -454,8 +462,7 @@ at::Tensor GetXlaTensorDimensionSize(const at::Tensor& tensor, int64_t dim) {
       tensor_methods::get_dimensions_size(xtensor, {dim}));
 }
 
-template <class T>
-py::object GetMetricData(const T* data) {
+template <class T>py::object GetMetricData(const T* data) {
   double accumulator = 0.0;
   size_t total_samples = 0;
   auto samples = data->Samples(&accumulator, &total_samples);
@@ -1548,6 +1555,27 @@ void InitXlaModuleBindings(py::module m) {
   m.def("_init_xla_lazy_backend", []() {
     MapXlaEnvVarsToLazy();
     InitXlaBackend();
+  });
+
+  /* The distributed runtime service is used by the PjRt GPU client. */
+  py::class_<xla::DistributedRuntimeService,
+             std::unique_ptr<xla::DistributedRuntimeService>>
+      distributed_runtime_service(m, "DistributedRuntimeService");
+  distributed_runtime_service.def("shutdown",
+                                  &xla::DistributedRuntimeService::Shutdown,
+                                  py::call_guard<py::gil_scoped_release>());
+  m.def("_xla_get_distributed_runtime_service", [](int num_nodes)
+      -> std::unique_ptr<xla::DistributedRuntimeService> {
+    std::string dist_service_addr =
+        xla::sys_util::GetEnvString("PJRT_DIST_SERVICE_ADDR", "");
+    XLA_CHECK(!dist_service_addr.empty())
+        << "must set PJRT_DIST_SERVICE_ADDR environment variable";
+    XLA_CHECK(num_nodes > 0) << "num_nodes must be positive: " << num_nodes;
+
+    xla::DistributedRuntimeServiceImpl::Options options;
+    options.num_nodes = num_nodes;
+    return std::move(xla::GetDistributedRuntimeService(dist_service_addr, options,
+        /*use_coordination_service=*/false).value());
   });
 
   BuildProfilerSubmodule(&m);
