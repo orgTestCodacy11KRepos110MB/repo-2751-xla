@@ -110,6 +110,7 @@ function build_torch_xla() {
 function run_torch_xla_tests() {
   PYTORCH_DIR=$1
   XLA_DIR=$2
+  USE_COVERAGE="${3:-0}"
   if [ -x "$(command -v nvidia-smi)" ]; then
     export GPU_NUM_DEVICES=2
   else
@@ -121,37 +122,44 @@ function run_torch_xla_tests() {
 
   pushd $XLA_DIR
     echo "Running Python Tests"
-    ./test/run_tests.sh
-    # only run test_autocast for cpu and gpu on circleCI.
-    python test/test_autocast.py
+    if [ "$USE_COVERAGE" != "0" ]; then
+      ./test/utils/run_test_coverage.sh
+      coverage combine
+      coverage html
+      mv htmlcov ~/
+    else
+      ./test/run_tests.sh
+      # only run test_autocast for cpu and gpu on circleCI.
+      python test/test_autocast.py
 
-    # GPU tests
-    if [ -x "$(command -v nvidia-smi)" ]; then
-      # Syncfree SGD optimizer tests
-      if [ -d ./torch_xla/amp/syncfree ]; then
-        echo "Running Syncfree Optimizer Test"
-        python test/test_syncfree_optimizers.py
+      # GPU tests
+      if [ -x "$(command -v nvidia-smi)" ]; then
+        # Syncfree SGD optimizer tests
+        if [ -d ./torch_xla/amp/syncfree ]; then
+          echo "Running Syncfree Optimizer Test"
+          python test/test_syncfree_optimizers.py
 
-        # Following test scripts are mainly useful for
-        # performance evaluation & comparison among different
-        # amp optimizers.
-        # echo "Running ImageNet Test"
-        # python test/test_train_mp_imagenet_amp.py --fake_data --num_epochs=1
+          # Following test scripts are mainly useful for
+          # performance evaluation & comparison among different
+          # amp optimizers.
+          # echo "Running ImageNet Test"
+          # python test/test_train_mp_imagenet_amp.py --fake_data --num_epochs=1
 
-        # disabled per https://github.com/pytorch/xla/pull/2809
-        # echo "Running MNIST Test"
-        # python test/test_train_mp_mnist_amp.py --fake_data --num_epochs=1
+          # disabled per https://github.com/pytorch/xla/pull/2809
+          # echo "Running MNIST Test"
+          # python test/test_train_mp_mnist_amp.py --fake_data --num_epochs=1
+        fi
       fi
-    fi
 
-    pushd test/cpp
-    echo "Running C++ Tests"
-    ./run_tests.sh
+      pushd test/cpp
+      echo "Running C++ Tests"
+      ./run_tests.sh
 
-    if ! [ -x "$(command -v nvidia-smi)"  ]
-    then
-      ./run_tests.sh -X early_sync -F AtenXlaTensorTest.TestEarlySyncLiveTensors -L""
+      if ! [ -x "$(command -v nvidia-smi)"  ]
+      then
+        ./run_tests.sh -X early_sync -F AtenXlaTensorTest.TestEarlySyncLiveTensors -L""
+      fi
+      popd
     fi
-    popd
   popd
 }
