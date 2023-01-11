@@ -349,7 +349,7 @@ allowed_opinfo = set(
             # AllowedOpInfoEntry('var_mean'),
 
             # Failed after functionalization
-            # AllowedOpInfoEntry('masked_scatter'), # crash
+            AllowedOpInfoEntry('masked_scatter'), # crash
         }))
 
 

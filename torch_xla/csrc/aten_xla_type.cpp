@@ -1620,6 +1620,14 @@ at::Tensor& XLANativeFunctions::masked_scatter_(at::Tensor& self,
   return self;
 }
 
+at::Tensor XLANativeFunctions::masked_scatter(const at::Tensor & self, const at::Tensor & mask, const at::Tensor & source) {
+  TORCH_LAZY_FN_COUNTER("xla::");
+  XLATensorPtr self_tensor = bridge::GetXlaTensor(self);
+  tensor_methods::masked_scatter(self_tensor, bridge::GetXlaTensor(mask),
+                                  bridge::GetXlaTensor(source));
+  return self;
+}
+
 at::Tensor XLANativeFunctions::masked_select(const at::Tensor& self,
                                              const at::Tensor& mask) {
   TORCH_LAZY_FN_COUNTER("xla::");

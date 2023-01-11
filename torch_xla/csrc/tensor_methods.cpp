@@ -1545,6 +1545,14 @@ void masked_scatter_(XLATensorPtr& input, const XLATensorPtr& mask,
       source->GetIrValue()));
 }
 
+XLATensorPtr masked_scatter(XLATensorPtr& input, const XLATensorPtr& mask,
+                     const XLATensorPtr& source) {
+  torch::lazy::ScopePusher ir_scope(at::aten::masked_scatter.toQualString());
+  return input->CreateFrom(torch::lazy::MakeNode<MaskedScatter>(
+      input->GetIrValue(), MaybeExpand(mask->GetIrValue(), input->shape()),
+      source->GetIrValue()));
+}
+
 XLATensorPtr masked_select(const XLATensorPtr& input,
                            const XLATensorPtr& mask) {
   torch::lazy::NodePtr node = torch::lazy::MakeNode<MaskedSelect>(

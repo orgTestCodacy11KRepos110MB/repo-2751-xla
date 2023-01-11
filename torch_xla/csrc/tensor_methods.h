@@ -492,6 +492,9 @@ void masked_fill_(XLATensorPtr& input, const XLATensorPtr& mask,
 void masked_scatter_(XLATensorPtr& input, const XLATensorPtr& mask,
                      const XLATensorPtr& source);
 
+XLATensorPtr masked_scatter(XLATensorPtr& input, const XLATensorPtr& mask,
+                     const XLATensorPtr& source);
+
 XLATensorPtr masked_select(const XLATensorPtr& input, const XLATensorPtr& mask);
 
 XLATensorPtr matmul(const XLATensorPtr& input, const XLATensorPtr& other);
