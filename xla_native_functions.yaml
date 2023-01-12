@@ -208,6 +208,7 @@ supported:
   - masked_fill_.Scalar
   - masked_fill_.Tensor
   - masked_scatter_
+  - masked_scatter
   - masked_select
   - max
   - max.dim
@@ -361,7 +362,6 @@ supported:
   - _cdist_forward
   - masked_fill.Scalar
   - masked_fill.Tensor
-  - masked_scatter
   - mvlgamma
   - permute
   # The same applies to these ops, but we already have direct lowerings for them

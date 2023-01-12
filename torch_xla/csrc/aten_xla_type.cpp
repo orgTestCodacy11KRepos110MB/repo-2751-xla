@@ -1613,6 +1613,7 @@ at::Tensor& XLANativeFunctions::masked_fill_(at::Tensor& self,
 at::Tensor& XLANativeFunctions::masked_scatter_(at::Tensor& self,
                                                 const at::Tensor& mask,
                                                 const at::Tensor& source) {
+  std::cout << "WONJOO: masked_scatter_" << std::endl;
   TORCH_LAZY_FN_COUNTER("xla::");
   XLATensorPtr self_tensor = bridge::GetXlaTensor(self);
   tensor_methods::masked_scatter_(self_tensor, bridge::GetXlaTensor(mask),
@@ -1621,11 +1622,11 @@ at::Tensor& XLANativeFunctions::masked_scatter_(at::Tensor& self,
 }
 
 at::Tensor XLANativeFunctions::masked_scatter(const at::Tensor & self, const at::Tensor & mask, const at::Tensor & source) {
+  std::cout << "WONJOO: masked_scatter" << std::endl;
   TORCH_LAZY_FN_COUNTER("xla::");
   XLATensorPtr self_tensor = bridge::GetXlaTensor(self);
-  tensor_methods::masked_scatter(self_tensor, bridge::GetXlaTensor(mask),
-                                  bridge::GetXlaTensor(source));
-  return self;
+  return bridge::AtenFromXlaTensor(tensor_methods::masked_scatter(self_tensor, bridge::GetXlaTensor(mask),
+                                  bridge::GetXlaTensor(source)));
 }
 
 at::Tensor XLANativeFunctions::masked_select(const at::Tensor& self,
