@@ -194,7 +194,7 @@ function run_mp_op_tests {
 }
 
 function run_tests {
-  if ["$PYTORCH_XLA_TESTS_ONLY" = false] 
+  if ["$PYTORCH_XLA_TESTS_ONLY" = false] ; then 
     run_op_tests_py
   fi
   run_op_tests_pyxla
