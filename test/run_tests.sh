@@ -125,7 +125,7 @@ function run_torchrun {
   fi
 }
 
-function run_op_tests_py {
+function run_op_tests_pt {
   run_dynamic python3 "$CDIR/../../test/test_view_ops.py" "$@" -v TestViewOpsXLA
   run_test python3 "$CDIR/../../test/test_torch.py" "$@" -v TestTorchDeviceTypeXLA
   run_dynamic python3 "$CDIR/../../test/test_torch.py" "$@" -v TestDevicePrecisionXLA
@@ -142,7 +142,7 @@ function run_op_tests_py {
   run_test python3 "$CDIR/../../test/dynamo/test_torchxla_integration.py"
 }
 
-function run_op_tests_pyxla {
+function run_op_tests_ptxla {
   run_dynamic python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
   run_dynamic python3 "$CDIR/test_dynamic_shapes.py"
   run_dynamic python3 "$CDIR/test_dynamic_shape_models.py" "$@" --verbosity=$VERBOSITY
@@ -195,9 +195,9 @@ function run_mp_op_tests {
 
 function run_tests {
   if ["$PYTORCH_XLA_TESTS_ONLY" = false] ; then 
-    run_op_tests_py
+    run_op_tests_pt
   fi
-  run_op_tests_pyxla
+  run_op_tests_ptxla
   if [[ "$XLA_SKIP_MP_OP_TESTS" != "1" ]]; then
     run_mp_op_tests
   fi
