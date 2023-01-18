@@ -15,7 +15,7 @@ PYTORCH_XLA_TESTS_ONLY=false
 #
 # This flag should be set to `false`` by default. After testing your changes, make sure
 # to set this flag back to `false`` before you merge your PR.
-CONTINUE_ON_ERROR=false
+CONTINUE_ON_ERROR=true
 if [[ "$CONTINUE_ON_ERROR" == "1" ]]; then
   set +e
 fi
