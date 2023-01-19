@@ -15,7 +15,7 @@ FLAGS, leftovers = parser.parse_known_args()
 sys.argv = [sys.argv[0]] + leftovers
 
 for i in range(1, len(sys.argv)):
-    print(sys.argv[i])
+  print(sys.argv[i])
 
 # Normal imports section starts here.
 import collections
