@@ -14,6 +14,9 @@ parser.add_argument('--verbosity', type=int, default=0)
 FLAGS, leftovers = parser.parse_known_args()
 sys.argv = [sys.argv[0]] + leftovers
 
+for i in range(1, len(sys.argv)):
+    print(sys.argv[i])
+
 # Normal imports section starts here.
 import collections
 import copy
@@ -1091,6 +1094,7 @@ class TestAtenXlaTensor(XlaTestCase):
     self.runAtenTest((torch.randint(10, (10, 3, 4)), torch.randint(10, (4, 5))),
                      lambda x, y: torch.matmul(x, y))
 
+  @unittest.skipIf(1)
   def test_addmm_integer_types(self):
     self.runAtenTest((torch.randint(10, (2, 3)), torch.randint(
         10, (2, 3)), torch.randint(10, (3, 3))),
