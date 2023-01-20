@@ -1096,7 +1096,8 @@ class TestAtenXlaTensor(XlaTestCase):
 
   @unittest.skipIf(
       os.environ.get('PYTORCH_XLA_TESTS_ONLY'),
-      'To avoid new feature developing, disable failed PyTorch/XLA test on TPUVM')
+      'To avoid new feature developing, disable failed PyTorch/XLA test on TPUVM'
+  )
   def test_addmm_integer_types(self):
     self.runAtenTest((torch.randint(10, (2, 3)), torch.randint(
         10, (2, 3)), torch.randint(10, (3, 3))),
