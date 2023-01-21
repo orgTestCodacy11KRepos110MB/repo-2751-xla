@@ -14,9 +14,6 @@ parser.add_argument('--verbosity', type=int, default=0)
 FLAGS, leftovers = parser.parse_known_args()
 sys.argv = [sys.argv[0]] + leftovers
 
-for i in range(1, len(sys.argv)):
-  print(sys.argv[i])
-
 # Normal imports section starts here.
 import collections
 import copy
