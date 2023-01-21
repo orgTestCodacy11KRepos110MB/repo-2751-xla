@@ -87,6 +87,7 @@ function run_dynamic {
     PYTORCH_XLA_TESTS_SKIP=1 XLA_EXPERIMENTAL="nonzero:masked_select:masked_scatter" run_test "$@"
   else
     XLA_EXPERIMENTAL="nonzero:masked_select:masked_scatter" run_test "$@"
+  fi
 }
 
 function run_eager_debug {
