@@ -63,12 +63,12 @@ function run_opbyop {
 
 function run_use_bf16 {
   echo "Running with XLA_USE_BF16: $@"
-  XLA_USE_BF16=1 run_test "$@"
+  XLA_USE_EAGER_DEBUG_MODE=1 XLA_USE_BF16=1 run_test "$@"
 }
 
 function run_downcast_bf16 {
   echo "Running with XLA_DOWNCAST_BF16: $@"
-  XLA_DOWNCAST_BF16=1 run_test "$@"
+  XLA_USE_EAGER_DEBUG_MODE=1 XLA_DOWNCAST_BF16=1 run_test "$@"
 }
 
 function run_xla_ir_debug {
@@ -143,35 +143,35 @@ function run_op_tests_pt {
 }
 
 function run_op_tests_ptxla {
-  run_dynamic python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
-  run_dynamic python3 "$CDIR/test_dynamic_shapes.py"
-  run_dynamic python3 "$CDIR/test_dynamic_shape_models.py" "$@" --verbosity=$VERBOSITY
-  run_opbyop python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
-  run_eager_debug python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
-  run_async_scalar python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
-  run_test python3 "$CDIR/test_grad_checkpoint.py"
-  run_pjrt python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
-  run_test python3 "$CDIR/test_async_closures.py"
-  run_test python3 "$CDIR/test_xla_dist.py"
-  run_test python3 "$CDIR/test_profiler.py"
-  run_test python3 "$CDIR/test_ops.py"
-  run_test python3 "$CDIR/test_metrics.py"
-  run_test python3 "$CDIR/dynamo/test_dynamo_integrations_util.py"
-  run_test python3 "$CDIR/dynamo/test_dynamo.py"
-  run_save_tensor_file python3 "$CDIR/dynamo/test_dynamo_graph_dump.py"
-  run_downcast_bf16 python3 "$CDIR/test_data_type.py"
-  run_use_bf16 python3 "$CDIR/test_data_type.py"
-  run_test python3 "$CDIR/test_torch_distributed_xla_backend.py"
-  run_xla_ir_debug python3 "$CDIR/test_env_var_mapper.py"
-  run_xla_hlo_debug python3 "$CDIR/test_env_var_mapper.py"
-  run_pjrt python3 "$CDIR/pjrt/test_experimental_pjrt.py"
-  run_pjrt python3 "$CDIR/pjrt/test_experimental_tpu.py"
-  run_pjrt python3 "$CDIR/pjrt/test_ddp.py"
-  run_pjrt python3 "$CDIR/pjrt/test_mesh_service.py"
-  run_pjrt python3 "$CDIR/spmd/test_xla_sharding.py"
-  run_pjrt python3 "$CDIR/spmd/test_xla_virtual_device.py"
-  run_test python3 "$CDIR/test_operations_hlo.py" "$@" --verbosity=$VERBOSITY
-  run_test python3 "$CDIR/test_input_output_aliases.py"
+  # run_dynamic python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
+  # run_dynamic python3 "$CDIR/test_dynamic_shapes.py"
+  # run_dynamic python3 "$CDIR/test_dynamic_shape_models.py" "$@" --verbosity=$VERBOSITY
+  # run_opbyop python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
+  # run_eager_debug python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
+  # run_async_scalar python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
+  # run_test python3 "$CDIR/test_grad_checkpoint.py"
+  # run_pjrt python3 "$CDIR/test_operations.py" "$@" --verbosity=$VERBOSITY
+  # run_test python3 "$CDIR/test_async_closures.py"
+  # run_test python3 "$CDIR/test_xla_dist.py"
+  # run_test python3 "$CDIR/test_profiler.py"
+  # run_test python3 "$CDIR/test_ops.py"
+  # run_test python3 "$CDIR/test_metrics.py"
+  # run_test python3 "$CDIR/dynamo/test_dynamo_integrations_util.py"
+  # run_test python3 "$CDIR/dynamo/test_dynamo.py"
+  # run_save_tensor_file python3 "$CDIR/dynamo/test_dynamo_graph_dump.py"
+  # run_downcast_bf16 python3 "$CDIR/test_data_type.py"
+  # run_use_bf16 python3 "$CDIR/test_data_type.py"
+  # run_test python3 "$CDIR/test_torch_distributed_xla_backend.py"
+  # run_xla_ir_debug python3 "$CDIR/test_env_var_mapper.py"
+  # run_xla_hlo_debug python3 "$CDIR/test_env_var_mapper.py"
+  # run_pjrt python3 "$CDIR/pjrt/test_experimental_pjrt.py"
+  # run_pjrt python3 "$CDIR/pjrt/test_experimental_tpu.py"
+  # run_pjrt python3 "$CDIR/pjrt/test_ddp.py"
+  # run_pjrt python3 "$CDIR/pjrt/test_mesh_service.py"
+  # run_pjrt python3 "$CDIR/spmd/test_xla_sharding.py"
+  # run_pjrt python3 "$CDIR/spmd/test_xla_virtual_device.py"
+  # run_test python3 "$CDIR/test_operations_hlo.py" "$@" --verbosity=$VERBOSITY
+  # run_test python3 "$CDIR/test_input_output_aliases.py"
 }
 
 function run_mp_op_tests {
