@@ -83,11 +83,7 @@ function run_xla_hlo_debug {
 
 function run_dynamic {
   echo "Running in DynamicShape mode: $@"
-  # if ["$PYTORCH_XLA_TESTS_ONLY" = true] ; then
-  PYTORCH_XLA_TESTS_SKIP=1 XLA_EXPERIMENTAL="nonzero:masked_select:masked_scatter" run_test "$@"
-  # else
-  # XLA_EXPERIMENTAL="nonzero:masked_select:masked_scatter" run_test "$@"
-  # fi
+  XLA_USE_EAGER_DEBUG_MODE=1 XLA_EXPERIMENTAL="nonzero:masked_select:masked_scatter" run_test "$@"
 }
 
 function run_eager_debug {

@@ -1092,7 +1092,7 @@ class TestAtenXlaTensor(XlaTestCase):
                      lambda x, y: torch.matmul(x, y))
 
   @unittest.skipIf(
-      os.environ.get('PYTORCH_XLA_TESTS_SKIP', True),
+      os.environ.get('XLA_USE_EAGER_DEBUG_MODE'),
       'To avoid new feature developing, disable failed PyTorch/XLA test on TPUVM'
   )
   def test_addmm_integer_types(self):
