@@ -10,7 +10,6 @@ import unittest
 # TODO(alanwaketan): add test for views.
 class InputOutputAliasesTest(unittest.TestCase):
 
-  @unittest.skip("Broke by functionalization. why? No views at all...")
   def test_non_view(self):
     xla_device = xm.xla_device()
     # This is a special case where we want to sync t1's and t2's
@@ -27,12 +26,13 @@ class InputOutputAliasesTest(unittest.TestCase):
     self.assertEqual(met.metric_data("InputOutputAliasCount")[1], 2.0)
 
     # check in place op aliasing.
+    # No more in place ops after functionalization.
     t3 = t1 + t2
     t1 *= 2.0
     t2 += 2.0
     xm.mark_step()
 
-    self.assertEqual(met.metric_data("InputOutputAliasCount")[1], 4.0)
+    self.assertEqual(met.metric_data("InputOutputAliasCount")[1], 2.0)
 
 
 if __name__ == '__main__':
