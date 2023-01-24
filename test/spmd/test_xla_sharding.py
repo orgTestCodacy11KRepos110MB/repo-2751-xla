@@ -127,7 +127,8 @@ class BasicShardingTest(test_xla_sharding_base.XlaShardingTest):
       xm.mark_step()
       # After functionalization, in-place ops like tensor.add_ are no longer availble. Therfore, we need
       # a new way to carry the sharding spec between iterations. This is a tentative fix.
-      xs.mark_sharding(model.fc1.weight, self._get_mesh((1, self.n_devices)), (0, 1))
+      xs.mark_sharding(model.fc1.weight, self._get_mesh((1, self.n_devices)),
+                       (0, 1))
 
     self.assertEqual(sharding_spec,
                      torch_xla._XLAC._get_xla_sharding_spec(model.fc1.weight))
