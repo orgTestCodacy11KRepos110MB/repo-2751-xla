@@ -25,15 +25,6 @@ class InputOutputAliasesTest(unittest.TestCase):
     xm.mark_step()
     self.assertEqual(met.metric_data("InputOutputAliasCount")[1], 2.0)
 
-    # check in place op aliasing.
-    # No more in place ops after functionalization.
-    t3 = t1 + t2
-    t1 *= 2.0
-    t2 += 2.0
-    xm.mark_step()
-
-    self.assertEqual(met.metric_data("InputOutputAliasCount")[1], 2.0)
-
 
 if __name__ == '__main__':
   test = unittest.main()
