@@ -126,7 +126,6 @@ class BasicShardingTest(test_xla_sharding_base.XlaShardingTest):
       loss.backward()
       optimizer.step()
       xm.mark_step()
-
     self.assertEqual(sharding_spec,
                      torch_xla._XLAC._get_xla_sharding_spec(model.fc1.weight))
 
