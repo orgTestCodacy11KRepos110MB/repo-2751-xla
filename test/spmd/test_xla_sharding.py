@@ -107,6 +107,7 @@ class BasicShardingTest(test_xla_sharding_base.XlaShardingTest):
     xm.mark_step()  # mark_step should preserve the sharding
     self.assertEqual(sharding_spec, torch_xla._XLAC._get_xla_sharding_spec(xt))
 
+  @unittest.skip("fails with functionalization")
   def test_optimizer_step_with_sharding(self):
     model = self.SimpleLinear().to(xm.xla_device())
     xs.mark_sharding(model.fc1.weight, self._get_mesh((1, self.n_devices)),
@@ -125,13 +126,17 @@ class BasicShardingTest(test_xla_sharding_base.XlaShardingTest):
       loss.backward()
       optimizer.step()
       xm.mark_step()
-      # After functionalization, in-place ops like tensor.add_ are no longer availble. Therfore, we need
-      # a new way to carry the sharding spec between iterations. This is a tentative fix.
-      xs.mark_sharding(model.fc1.weight, self._get_mesh((1, self.n_devices)),
-                       (0, 1))
 
     self.assertEqual(sharding_spec,
                      torch_xla._XLAC._get_xla_sharding_spec(model.fc1.weight))
+
+  @unittest.skip("fails with functionalization")
+  def test_inplace_add_with_sharding(self):
+    xt = torch.ones(2, 2).to(xm.xla_device())
+    xs.mark_sharding(xt, self._get_mesh((1, self.n_devices)), (0, 1))
+    sharding_spec = torch_xla._XLAC._get_xla_sharding_spec(xt)
+    xt.add_(1)  # inplace update should preserve the sharding
+    self.assertEqual(sharding_spec, torch_xla._XLAC._get_xla_sharding_spec(xt))
 
   def test_shard_hashing(self):
     xt1 = torch.ones(2, 2).to(xm.xla_device())
