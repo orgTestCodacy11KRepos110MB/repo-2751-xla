@@ -139,4 +139,6 @@ WORKDIR /pytorch/xla
 # TODO: this fails without a git repository initialized for some reason
 RUN python setup.py clean || exit 0
 
+RUN apt-get install -y lldb
+
 WORKDIR /

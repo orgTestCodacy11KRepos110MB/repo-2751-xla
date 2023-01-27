@@ -42,7 +42,7 @@ class ShardingUtil {
   // might improve the performance and save the bandwidth.
   static std::vector<std::vector<xla::ComputationClient::DataPtr>> InputHandler(
       std::vector<xla::ComputationClient::DataPtr> arguments,
-      std::vector<std::string> devices);
+      std::vector<std::string> local_devices);
 
   // Shard a tensor and returns the sharded tensors based on the `sharding`
   // spec. REPLICATED sharding should result in shards identical to the input;
@@ -53,7 +53,7 @@ class ShardingUtil {
   // evenly partitionable, unless `padded` is set.
   static std::vector<at::Tensor> ShardTensor(
       const at::Tensor& tensor, const xla::OpSharding sharding,
-      const std::vector<std::string>& devices, bool padded = true);
+      const std::vector<std::string>& local_devices, bool padded = true);
 };
 
 }  // namespace torch_xla

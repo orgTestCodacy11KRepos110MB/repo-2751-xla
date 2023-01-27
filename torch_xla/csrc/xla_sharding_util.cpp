@@ -136,6 +136,7 @@ xla::HloModuleProto ShardingUtil::SpmdPartitioningPass(
   execution_options.set_use_spmd_partitioning(true);
   execution_options.set_num_replicas(num_replicas);
   execution_options.set_num_partitions(num_partitions);
+  // TODO(jonbolin): Set a device assignment?
   auto module_config = xla::HloModule::CreateModuleConfigFromProto(
                            hlo_proto, xla::DebugOptions(), &execution_options)
                            .value();
@@ -177,29 +178,37 @@ xla::HloModuleProto ShardingUtil::SpmdPartitioningPass(
 std::vector<std::vector<xla::ComputationClient::DataPtr>>
 ShardingUtil::InputHandler(
     std::vector<xla::ComputationClient::DataPtr> arguments,
-    std::vector<std::string> devices) {
+    std::vector<std::string> local_devices{
   std::vector<std::vector<xla::ComputationClient::DataPtr>> arguments_by_device(
-      devices.size(),
+      local_devices.size(),
       std::vector<xla::ComputationClient::DataPtr>(arguments.size()));
+
+    // Map from global ordinal to local ordinal.
+    std::unordered_map<int, int> local_ordinals;
+    for (int local_ordinal = 0; local_ordinal < local_devices.size(); local_ordinal++) {
+      int global_ordinal = ParseDeviceString(local_devices[local_ordinal]).ordinal();
+      local_ordinals[global_ordinal] = local_ordinal;
+    }
+
   for (int64_t argument_i = 0; argument_i < arguments.size(); ++argument_i) {
     auto shards =
         xla::ComputationClient::Get()->GetDataShards(arguments[argument_i]);
     if (shards.size() > 1) {
       // Input is sharded across addressable devices
       for (auto shard : shards) {
-        int64_t device_i = ParseDeviceString(shard->device()).ordinal();
+        int64_t device_i = local_ordinals[ParseDeviceString(shard->device()).ordinal()];
         arguments_by_device[device_i][argument_i] = shard;
       }
     } else {
       // Input is replicated across addressable devices
       int64_t source_device_i =
-          ParseDeviceString(shards[0]->device()).ordinal();
+          local_ordinals[ParseDeviceString(shards[0]->device()).ordinal()];
       arguments_by_device[source_device_i][argument_i] = shards[0];
-      for (int64_t device_i = 0; device_i < devices.size(); ++device_i) {
+      for (int64_t device_i = 0; device_i < local_devices.size(); ++device_i) {
         if (device_i != source_device_i) {
           arguments_by_device[device_i][argument_i] =
               xla::ComputationClient::Get()->CopyToDevice(shards[0],
-                                                          devices[device_i]);
+                                                          local_devices[device_i]);
         }
       }
     }
@@ -210,22 +219,41 @@ ShardingUtil::InputHandler(
 
 std::vector<at::Tensor> ShardingUtil::ShardTensor(
     const at::Tensor& tensor, const xla::OpSharding sharding,
-    const std::vector<std::string>& devices, bool padded) {
+    const std::vector<std::string>& local_devices, bool padded) {
   TF_LOG(INFO) << "ShardTensor with sharding type(" << sharding.type() << ")..."
                << std::endl;
-  std::vector<at::Tensor> shards(devices.size());
+  std::vector<at::Tensor> shards(local_devices.size());
   if (sharding.type() == xla::OpSharding::REPLICATED) {
     std::fill_n(shards.begin(), shards.size(), tensor);
   } else if (sharding.type() == xla::OpSharding::OTHER) {
-    XLA_CHECK_EQ(devices.size(), sharding.tile_assignment_devices().size())
-        << "Invalid sharding tile_assignment_devices.size(): expected "
-        << devices.size() << ", actual "
-        << sharding.tile_assignment_devices().size();
+    //XLA_CHECK_EQ(devices.size(), sharding.tile_assignment_devices().size())
+    //    << "Invalid sharding tile_assignment_devices.size(): expected "
+    //    << devices.size() << ", actual "
+    //    << sharding.tile_assignment_devices().size();
+    std::cerr << "jonbolin local_devices=" << local_devices << std::endl;
+    std::cerr << "jonbolin local_devices.size()=" << local_devices.size() << ", tile_assignment_devices.size()=" << sharding.tile_assignment_devices().size() << std::endl;
     XLA_CHECK(sharding.tile_shape().dimensions_size() <= 2);
     XLA_CHECK(tensor.sizes().size() >= sharding.tile_shape().dimensions_size());
 
+    // Map from global ordinal to local ordinal.
+    std::unordered_map<int, int> local_ordinals;
+    for (int local_ordinal = 0; local_ordinal < local_devices.size(); local_ordinal++) {
+      int global_ordinal = ParseDeviceString(local_devices[local_ordinal]).ordinal();
+      std::cerr << "jonbolin global ordinal for " << local_devices[local_ordinal] << ": " << global_ordinal << std::endl;
+      local_ordinals[global_ordinal] = local_ordinal;
+    }
+
+
     auto tile_shape = sharding.tile_assignment_dimensions();
-    for (size_t i = 0; i < shards.size(); ++i) {
+    std::cerr << "jonbolin tile_shape=(" << tile_shape[0] << ", " << tile_shape[1] << ")" << std::endl;
+    for (size_t i = 0; i < sharding.tile_assignment_devices().size(); i++) {
+      int64_t core = sharding.tile_assignment_devices()[i];
+      std::cout << "jonbolin i=" << i << " maps to core=" << core << std::endl;
+      if (local_ordinals.find(core) == local_ordinals.end()) {
+        // Skip any non-local shards
+        continue;
+      }
+
       at::Tensor shard;
       if (tile_shape.size() == 1) {
         int64_t x_partition = tensor.sizes()[0] / tile_shape[0] +
@@ -241,8 +269,8 @@ std::vector<at::Tensor> ShardingUtil::ShardTensor(
         shard = tensor.index(
             {at::indexing::Slice((i % tile_shape[0]) * x_partition,
                                  (i % tile_shape[0] + 1) * x_partition),
-             at::indexing::Slice((i % tile_shape[1]) * y_partition,
-                                 (i % tile_shape[1] + 1) * y_partition)});
+             at::indexing::Slice(((i / tile_shape[0]) % tile_shape[1]) * y_partition,
+                                 ((i / tile_shape[0]) % tile_shape[1] + 1) * y_partition)});
       } else if (tile_shape.size() == 3) {
         int64_t x_partition = tensor.sizes()[0] / tile_shape[0] +
                               (tensor.sizes()[0] % tile_shape[0] != 0);
@@ -298,10 +326,11 @@ std::vector<at::Tensor> ShardingUtil::ShardTensor(
              at::indexing::Slice((i % tile_shape[4]) * v_partition,
                                  (i % tile_shape[4] + 1) * v_partition)});
       }
-      int64_t core = sharding.tile_assignment_devices()[i];
-      shards[core] = shard.contiguous(at::MemoryFormat::Contiguous);
+      std::cerr << "core " << core << ": Generated shard " << shard << std::endl;
+      shards[local_ordinals[core]] = shard.contiguous(at::MemoryFormat::Contiguous);
     }
 
+    // TODO(jonbolin): How to pad multihost tensors? Cannot use shards[sharding.tile_assignment_devices()[0]] in general.
     // Zero-pad to the right to ensure the sizes are even
     if (shards.size() > 0 && padded) {
       for (size_t i = 1; i < shards.size(); ++i) {

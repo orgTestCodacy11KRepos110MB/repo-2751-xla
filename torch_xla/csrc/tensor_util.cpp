@@ -935,7 +935,7 @@ std::vector<torch::lazy::BackendDataPtr> CreateTensorsData(
       // host communications. This means that we may need to manually shard
       // across global devices for multi-host training.
       std::vector<std::string> local_devices =
-          xla::ComputationClient::Get()->GetAllDevices();
+          xla::ComputationClient::Get()->GetLocalDevices();
       // Shards the input tensors with padding, to split evenly.
       // The execution requires consistent shard sizes, and the zero-padded
       // values should be ignored.
@@ -943,9 +943,9 @@ std::vector<torch::lazy::BackendDataPtr> CreateTensorsData(
           tensors[i], sharding, local_devices, /*padded=*/true);
 
       for (int64_t j = 0; j < shards.size(); ++j) {
-        int64_t ordinal = (sharding.type() == xla::OpSharding::OTHER)
-                              ? sharding.tile_assignment_devices()[j]
-                              : j;
+        int64_t ordinal = j;//(sharding.type() == xla::OpSharding::OTHER)
+                          //    ? sharding.tile_assignment_devices()[j]
+                          //    : j;
         auto shard_device = ParseDeviceString(local_devices[ordinal]);
         auto shard_shape =
             CreateComputationShapeFromTensor(shards[j], &shard_device);
